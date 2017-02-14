@@ -5,304 +5,207 @@ DOWN = "down"
 RIGHT = "right"
 LEFT = "left"
 
-map_ = [
-	[0,0,0,1,0,0,0,0,1,0],
-	[0,1,0,1,0,0,1,0,1,0],
-	[0,1,0,0,0,0,0,0,0,0],
-	[0,1,1,1,1,1,1,1,1,0],
-	[0,1,0,0,0,0,0,0,0,0],
-	[0,1,1,1,1,1,1,0,1,1],
-	[0,0,0,1,0,0,1,0,0,0],
-	[0,0,0,1,1,0,1,1,1,0],
-	[0,0,0,0,0,0,1,0,1,0],
-	[0,0,0,1,1,1,1,0,0,2],
-]
 
-x = 0
-y = 0
+class Map:
+	def __init__(self, map_=[]):
+		if len(map_) == 0:
+			map_ = [
+				[0,0,0,1,0,0,0,0,1,0],
+				[0,1,0,1,0,0,1,0,1,0],
+				[0,1,0,0,0,0,0,0,0,0],
+				[0,1,1,1,1,1,1,1,1,0],
+				[0,1,0,0,0,0,0,0,0,0],
+				[0,1,1,1,1,1,1,0,1,1],
+				[0,0,0,1,0,0,1,0,0,0],
+				[0,0,0,1,1,0,1,1,1,0],
+				[0,0,0,0,0,0,1,0,1,0],
+				[0,0,0,1,1,1,1,0,0,2],
+			]
+		self.map = map_
 
-paths = [(x, y)]
-direction = DOWN
-paths_tested = {}
-dead_end = set()
+	def find_path(self, pos):
+		self.x, self.y = pos
+		self.paths = [(self.x, self.y)]
 
-def printpath(p):
-	for pos in dead_end:
-		x, y = pos
-		map_[y][x] = 4
-	for pos in p:
-		x, y = pos
-		map_[y][x] = 3
-	pprint(map_)
-	print("-" * (len(map_) * 3 + 2))
-	for row in map_:
-		print("|", end="")
-		for line in row:
-			if line == 0:
-				print("   ", end="")
-			elif line == 1:
-				print(" O ", end="")
-			elif line == 3:
-				print(" + ", end="")
-			elif line == 4:
-				print(" X ", end="")
-		print("|")
-	print("-" * (len(map_) * 3 + 2))
+		self.dead_end = set()
+		# self.paths_tested = {}
+		self.direction = DOWN
 
-def checknexpre(l, i, x, y):
-	next_ = None
-	prev = None
-
-	try:
-		next_ = l[i - 1]
-	except:
-		pass
-	try:
-		prev = l[i + 1]
-	except:
-		pass
-
-	if (((x, y) != next_) and ((x, y) != prev)):
-		return True
-	return False
-
-try:
-	while map_[y][x] != 2:
-		if len(paths) > 50:
-			break
-		if direction == DOWN:
-			if y + 1 < len(map_):
-				if ((map_[y + 1][x] != 1) and ((x, y + 1) not in dead_end)):
-					y += 1
-					paths.append((x, y))
-					continue
-			if x - 1 >= 0:
-				if map_[y][x - 1] != 1 and ((x - 1, y) not in paths):
-					direction = LEFT
-					continue
-			if x + 1 < len(map_[y]):
-				if map_[y][x + 1] != 1 and ((x + 1, y) not in paths):
-					direction = RIGHT
+		while self.map[self.y][self.x] != 2:
+			if len(self.paths) > 50:
+				break
+			if self.direction == DOWN:
+				if self.y + 1 < len(self.map):
+					if ((self.map[self.y + 1][self.x] != 1) and
+							((self.x, self.y + 1) not in self.dead_end)):
+						self.y += 1
+						self.paths.append((self.x, self.y))
+						continue
+				turn = self.turnleftright()
+				if turn:
 					continue
 
-			rev = paths.copy()
-			rev.reverse()
+				rev = self.paths.copy()
+				rev.reverse()
 
-			for i, p in enumerate(rev):
-				rx, ry = p
-				if rx - 1 >= 0:
-					if map_[ry][rx - 1] != 1:
-						res = checknexpre(rev, i, rx-1, ry)
-						if res:
-							paths = paths[:paths.index((rx, ry)) + 1]
-							x, y = rx, ry
-							direction = LEFT
-							break
+				self.backward(rev)
 
-				if rx + 1 < len(map_[ry]):
-					if map_[ry][rx + 1] != 1:
-						res = checknexpre(rev, i, rx+1, ry)
-						if res:
-							paths = paths[:paths.index((rx, ry)) + 1]
-							x, y = rx, ry
-							direction = RIGHT
-							break
-
-				if ry - 1 >= 0:
-					if map_[ry -1][rx] != 1:
-						res = checknexpre(rev, i, rx, ry-1)
-						if res:
-							paths = paths[:paths.index((rx, ry)) + 1]
-							x, y = rx, ry
-							direction = UP
-							break
-
-				if ry + 1 < len(map_):
-					if map_[ry + 1][rx] != 1:
-						res = checknexpre(rev, i, rx, ry+1)
-						if res:
-							paths = paths[:paths.index((rx, ry)) + 1]
-							x, y = rx, ry
-							direction = DOWN
-							break
-
-				dead_end.add((rx, ry))
-
-		if direction == RIGHT:
-			if x + 1 < len(map_[y]):
-				if ((map_[y][x + 1] != 1) and ((x + 1, y) not in dead_end)):
-					x += 1
-					paths.append((x, y))
-					continue
-			if y - 1 >= 0:
-				if map_[y - 1][x] != 1 and ((x, y - 1) not in paths):
-					direction = UP
-					continue
-			if y + 1 < len(map_):
-				if map_[y + 1][x] != 1 and ((x, y + 1) not in paths):
-					direction = DOWN
+			if self.direction == RIGHT:
+				if self.x + 1 < len(self.map[self.y]):
+					if ((self.map[self.y][self.x + 1] != 1) and
+							((self.x + 1, self.y) not in self.dead_end)):
+						self.x += 1
+						self.paths.append((self.x, self.y))
+						continue
+				turn = self.turnupdown()
+				if turn:
 					continue
 
-			rev = paths.copy()
-			rev.reverse()
+				rev = self.paths.copy()
+				rev.reverse()
 
-			for i, p in enumerate(rev):
-				
-				if rx - 1 >= 0:
-					if map_[ry][rx - 1] != 1:
-						res = checknexpre(rev, i, rx-1, ry)
-						if res:
-							paths = paths[:paths.index((rx, ry)) + 1]
-							x, y = rx, ry
-							direction = LEFT
-							break
+				self.backward(rev)
 
-				if rx + 1 < len(map_[ry]):
-					if map_[ry][rx + 1] != 1:
-						res = checknexpre(rev, i, rx+1, ry)
-						if res:
-							paths = paths[:paths.index((rx, ry)) + 1]
-							x, y = rx, ry
-							direction = RIGHT
-							break
-
-				if ry - 1 >= 0:
-					if map_[ry -1][rx] != 1:
-						res = checknexpre(rev, i, rx, ry-1)
-						if res:
-							paths = paths[:paths.index((rx, ry)) + 1]
-							x, y = rx, ry
-							direction = UP
-							break
-
-				if ry + 1 < len(map_):
-					if map_[ry + 1][rx] != 1:
-						res = checknexpre(rev, i, rx, ry+1)
-						if res:
-							paths = paths[:paths.index((rx, ry)) + 1]
-							x, y = rx, ry
-							direction = DOWN
-							break
-
-				dead_end.add((rx, ry))
-
-		if direction == UP:
-			if y - 1 >= 0:
-				if ((map_[y - 1][x] != 1) and ((x, y - 1) not in dead_end)):
-					y -= 1
-					paths.append((x, y))
-					continue
-			if x - 1 >= 0:
-				if map_[y][x - 1] != 1 and ((x - 1, y) not in paths):
-					direction = LEFT
-					continue
-			if x + 1 < len(map_[y]):
-				if map_[y][x + 1] != 1 and ((x + 1, y) not in paths):
-					direction = RIGHT
+			if self.direction == UP:
+				if self.y - 1 >= 0:
+					if ((self.map[self.y - 1][self.x] != 1) and
+							((self.x, self.y - 1) not in self.dead_end)):
+						self.y -= 1
+						self.paths.append((self.x, self.y))
+						continue
+				turn = self.turnleftright()
+				if turn:
 					continue
 
-			rev = paths.copy()
-			rev.reverse()
+				rev = self.paths.copy()
+				rev.reverse()
 
-			for i, p in enumerate(rev):
-				rx, ry = p
-				if rx - 1 >= 0:
-					if map_[ry][rx - 1] != 1:
-						res = checknexpre(rev, i, rx-1, ry)
-						if res:
-							paths = paths[:paths.index((rx, ry)) + 1]
-							x, y = rx, ry
-							direction = LEFT
-							break
+				self.backward(rev)
 
-				if rx + 1 < len(map_[ry]):
-					if map_[ry][rx + 1] != 1:
-						res = checknexpre(rev, i, rx+1, ry)
-						if res:
-							paths = paths[:paths.index((rx, ry)) + 1]
-							x, y = rx, ry
-							direction = RIGHT
-							break
-
-				if ry - 1 >= 0:
-					if map_[ry -1][rx] != 1:
-						res = checknexpre(rev, i, rx, ry-1)
-						if res:
-							paths = paths[:paths.index((rx, ry)) + 1]
-							x, y = rx, ry
-							direction = UP
-							break
-
-				if ry + 1 < len(map_):
-					if map_[ry + 1][rx] != 1:
-						res = checknexpre(rev, i, rx, ry+1)
-						if res:
-							paths = paths[:paths.index((rx, ry)) + 1]
-							x, y = rx, ry
-							direction = DOWN
-							break
-
-				dead_end.add((rx, ry))
-
-		if direction == LEFT:
-			if x - 1 >= 0:
-				if ((map_[y][x - 1] != 1) and ((x - 1, y) not in dead_end)):
-					x -= 1
-					paths.append((x, y))
-					continue
-			if y - 1 >= 0:
-				if map_[y - 1][x] != 1 and ((x, y - 1) not in paths):
-					direction = UP
-					continue
-			if y + 1 < len(map_):
-				if map_[y + 1][x] != 1 and ((x, y + 1) not in paths):
-					direction = DOWN
+			if self.direction == LEFT:
+				if self.x - 1 >= 0:
+					if ((self.map[self.y][self.x - 1] != 1) and
+							((self.x - 1, self.y) not in self.dead_end)):
+						self.x -= 1
+						self.paths.append((self.x, self.y))
+						continue
+				turn = self.turnupdown()
+				if turn:
 					continue
 
-			rev = paths.copy()
-			rev.reverse()
+				rev = self.paths.copy()
+				rev.reverse()
 
-			for i, p in enumerate(rev):
-				rx, ry = p
-				if rx - 1 >= 0:
-					if map_[ry][rx - 1] != 1:
-						res = checknexpre(rev, i, rx-1, ry)
-						if res:
-							paths = paths[:paths.index((rx, ry)) + 1]
-							x, y = rx, ry
-							direction = LEFT
-							break
+				self.backward(rev)
 
-				if rx + 1 < len(map_[ry]):
-					if map_[ry][rx + 1] != 1:
-						res = checknexpre(rev, i, rx+1, ry)
-						if res:
-							paths = paths[:paths.index((rx, ry)) + 1]
-							x, y = rx, ry
-							direction = RIGHT
-							break
+	def turnupdown(self):
+		if self.y - 1 >= 0:
+			if self.map[self.y - 1][self.x] != 1 and
+					((self.x, self.y - 1) not in self.paths):
+				self.direction = UP
+				return True
+		if self.y + 1 < len(self.map):
+			if self.map[self.y + 1][self.x] != 1 and
+					((self.x, self.y + 1) not in self.paths):
+				self.direction = DOWN
+				return True
+		return False
 
-				if ry - 1 >= 0:
-					if map_[ry -1][rx] != 1:
-						res = checknexpre(rev, i, rx, ry-1)
-						if res:
-							paths = paths[:paths.index((rx, ry)) + 1]
-							x, y = rx, ry
-							direction = UP
-							break
+	def turnleftright(self):
+		if self.x - 1 >= 0:
+			if (self.map[self.y][self.x - 1] != 1 and
+					((self.x - 1, self.y) not in self.paths)):
+				self.direction = LEFT
+				return True
+		if self.x + 1 < len(self.map[self.y]):
+			if (self.map[self.y][self.x + 1] != 1 and
+					((self.x + 1, self.y) not in self.paths)):
+				self.direction = RIGHT
+				return True
+		return False
 
-				if ry + 1 < len(map_):
-					if map_[ry + 1][rx] != 1:
-						res = checknexpre(rev, i, rx, ry+1)
-						if res:
-							paths = paths[:paths.index((rx, ry)) + 1]
-							x, y = rx, ry
-							direction = DOWN
-							break
+	def backward(self, rev):
+		for i, p in enumerate(rev):
+			rx, ry = p
+			if rx - 1 >= 0:
+				if self.map[ry][rx - 1] != 1:
+					res = self.checknexpre(rev, i, rx - 1, ry)
+					if res:
+						self.paths = self.paths[:self.paths.index((rx, ry)) + 1]
+						self.x, self.y = rx, ry
+						self.direction = LEFT
+						break
 
-				dead_end.add((rx, ry))
-except KeyboardInterrupt:
-	pass
-printpath(paths)#, dead_end)
-print()
-print(paths)
+			if rx + 1 < len(self.map[ry]):
+				if self.map[ry][rx + 1] != 1:
+					res = self.checknexpre(rev, i, rx + 1, ry)
+					if res:
+						self.paths = self.paths[:self.paths.index((rx, ry)) + 1]
+						self.x, self.y = rx, ry
+						self.direction = RIGHT
+						break
+
+			if ry - 1 >= 0:
+				if self.map[ry -1][rx] != 1:
+					res = self.checknexpre(rev, i, rx, ry - 1)
+					if res:
+						self.paths = self.paths[:self.paths.index((rx, ry)) + 1]
+						self.x, self.y = rx, ry
+						self.direction = UP
+						break
+
+			if ry + 1 < len(self.map):
+				if self.map[ry + 1][rx] != 1:
+					res = self.checknexpre(rev, i, rx, ry + 1)
+					if res:
+						self.paths = self.paths[:self.paths.index((rx, ry)) + 1]
+						self.x, self.y = rx, ry
+						self.direction = DOWN
+						break
+			self.dead_end.add((rx, ry))
+
+	def checknexpre(self, l, i, x, y):
+		next_ = None
+		prev = None
+
+		try:
+			next_ = l[i - 1]
+		except:
+			pass
+		try:
+			prev = l[i + 1]
+		except:
+			pass
+
+		if (((x, y) != next_) and ((x, y) != prev)):
+			return True
+		return False
+
+	def printpath(self):
+		for pos in self.dead_end:
+			x, y = pos
+			self.map[y][x] = 4
+		for pos in self.paths:
+			x, y = pos
+			self.map[y][x] = 3
+		pprint(self.map)
+		print("-" * (len(self.map) * 3 + 2))
+		for row in self.map:
+			print("|", end="")
+			for line in row:
+				if line == 0:
+					print("   ", end="")
+				elif line == 1:
+					print(" O ", end="")
+				elif line == 3:
+					print(" + ", end="")
+				elif line == 4:
+					print(" X ", end="")
+			print("|")
+		print("-" * (len(self.map) * 3 + 2))
+
+if __name__ == "__main__":
+	m = Map()
+	m.find_path((0, 0))
+	m.printpath()
+	print(m.paths)
